@@ -18,7 +18,8 @@ CREATE TABLE artists (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     bio TEXT,
-    image_url VARCHAR(500),
+    cover_url VARCHAR(500),
+    cover_public_id VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -31,6 +32,7 @@ CREATE TABLE albums (
     title VARCHAR(255) NOT NULL,
     artist_id INT NOT NULL,
     cover_url VARCHAR(500),
+    cover_public_id VARCHAR(255),
     release_date DATE,
 
     FOREIGN KEY (artist_id)
@@ -64,9 +66,10 @@ CREATE TABLE songs (
 
     duration INT,
 
-    audio_url VARCHAR(500) NOT NULL,
+    b2_key VARCHAR(500) NOT NULL,
 
-    image_url VARCHAR(500),
+    cover_url VARCHAR(500),
+    cover_public_id VARCHAR(255),
 
     uploaded_by INT,
 
@@ -87,8 +90,7 @@ CREATE TABLE songs (
         REFERENCES genres(id),
 
     FOREIGN KEY (uploaded_by)
-        REFERENCES creators(id)
-);
+        REFERENCES creators(id));
 
 CREATE INDEX idx_song_title ON songs(title);
 
@@ -171,3 +173,10 @@ CREATE TABLE history (
         REFERENCES songs(id)
         ON DELETE CASCADE
 );
+CREATE INDEX idx_song_artist ON songs(artist_id);
+
+CREATE INDEX idx_song_album ON songs(album_id);
+
+CREATE INDEX idx_song_genre ON songs(genre_id);
+
+CREATE INDEX idx_song_playcount ON songs(play_count);
