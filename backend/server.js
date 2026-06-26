@@ -1,6 +1,8 @@
 const http = require('node:http');
 const { URL } = require('node:url');
 const { createDatabase } = require('./db');
+const { authenticateRequest } = require('./authMiddleware');
+const auth = require('./authController');
 
 const database = createDatabase();
 
@@ -8,8 +10,8 @@ function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
   });
   response.end(JSON.stringify(payload));
 }
@@ -132,6 +134,16 @@ function addSongToPlaylist(playlistId, payload) {
   return { id: result.lastInsertRowid, playlist_id: playlistId, song_id: payload.song_id, position: payload.position ?? 0 };
 }
 
+// Helper for routes requiring token authentication
+async function withAuth(request, response, handler, ...args) {
+  try {
+    await authenticateRequest(request);
+    await handler(request, response, ...args);
+  } catch (error) {
+    sendJson(response, error.statusCode || 401, { error: error.message });
+  }
+}
+
 const server = http.createServer(async (request, response) => {
   const requestUrl = new URL(request.url, 'http://localhost');
 
@@ -139,6 +151,96 @@ const server = http.createServer(async (request, response) => {
     sendJson(response, 204, {});
     return;
   }
+
+  // ==================== AUTH & USER ROUTES ====================
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/register') {
+    await auth.handleRegister(request, response);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/login') {
+    await auth.handleLogin(request, response);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/logout') {
+    await withAuth(request, response, auth.handleLogout);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/send-otp') {
+    await auth.handleSendOtp(request, response);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/verify-otp') {
+    await auth.handleVerifyOtp(request, response);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/reset-password') {
+    await auth.handleResetPassword(request, response);
+    return;
+  }
+
+  if (request.method === 'POST' && requestUrl.pathname === '/api/auth/refresh-token') {
+    await withAuth(request, response, auth.handleRefreshToken);
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/user/profile') {
+    await withAuth(request, response, auth.handleGetProfile);
+    return;
+  }
+
+  if (request.method === 'PUT' && requestUrl.pathname === '/api/user/profile') {
+    await withAuth(request, response, auth.handleUpdateProfile);
+    return;
+  }
+
+  if (request.method === 'PUT' && requestUrl.pathname === '/api/user/change-password') {
+    await withAuth(request, response, auth.handleChangePassword);
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/user/dashboard') {
+    await withAuth(request, response, auth.handleGetDashboard);
+    return;
+  }
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/user/sessions') {
+    await withAuth(request, response, auth.handleGetSessions);
+    return;
+  }
+
+  if (request.method === 'DELETE' && requestUrl.pathname.startsWith('/api/user/sessions/')) {
+    const sessionId = requestUrl.pathname.split('/').pop();
+    await withAuth(request, response, auth.handleRevokeSession, sessionId);
+    return;
+  }
+
+  // ==================== ADMIN ROUTES ====================
+
+  if (request.method === 'GET' && requestUrl.pathname === '/api/admin/users') {
+    await withAuth(request, response, auth.handleAdminListUsers);
+    return;
+  }
+
+  if (request.method === 'DELETE' && requestUrl.pathname.startsWith('/api/admin/users/')) {
+    const userId = requestUrl.pathname.split('/').pop();
+    await withAuth(request, response, auth.handleAdminDeleteUser, userId);
+    return;
+  }
+
+  if (request.method === 'PUT' && requestUrl.pathname.startsWith('/api/admin/users/') && requestUrl.pathname.endsWith('/role')) {
+    const pathParts = requestUrl.pathname.split('/');
+    const userId = pathParts[4];
+    await withAuth(request, response, auth.handleAdminChangeRole, userId);
+    return;
+  }
+
+  // ==================== ORIGINAL MUSIC/PLAYLIST ROUTES ====================
 
   if (request.method === 'GET' && requestUrl.pathname === '/api/health') {
     sendJson(response, 200, { ok: true });

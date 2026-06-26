@@ -12,7 +12,7 @@ import {
 import { useState } from 'react';
 import styles from './Header.module.css';
 
-export function Header({ onHomeClick }) {
+export function Header({ onHomeClick, user, onLogout, onAccountClick }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   return (
@@ -52,7 +52,7 @@ export function Header({ onHomeClick }) {
         </button>
         <div className={styles.profileWrapper}>
           <img
-            src="https://i.pinimg.com/736x/6c/41/cb/6c41cb3ae4d97eeb68ee2279fe0e0c6f.jpg"
+            src={user?.profile_picture || "https://i.pinimg.com/736x/6c/41/cb/6c41cb3ae4d97eeb68ee2279fe0e0c6f.jpg"}
             alt="Profile"
             className={styles.profile}
             onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -63,11 +63,18 @@ export function Header({ onHomeClick }) {
           />
           {showProfileMenu && (
             <div className={styles.profileMenu} role="menu">
-              <div className={styles.menuItem} role="menuitem">
+              <div
+                className={styles.menuItem}
+                role="menuitem"
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  onAccountClick?.();
+                }}
+                style={{ cursor: 'pointer' }}
+              >
                 <span>Account</span>
                 <ExternalLink size={16} />
               </div>
-              <div className={styles.menuItem} role="menuitem">Profile</div>
               <div className={styles.menuItem} role="menuitem">Recents</div>
               <div className={styles.menuItem} role="menuitem">
                 <span>Support</span>
@@ -78,7 +85,7 @@ export function Header({ onHomeClick }) {
                 <ExternalLink size={16} />
               </div>
               <div className={styles.menuItem} role="menuitem">Settings</div>
-              <div className={styles.menuItem} role="menuitem">Log out</div>
+              <div className={styles.menuItem} role="menuitem" onClick={onLogout} style={{ cursor: 'pointer' }}>Log out</div>
               <hr className={styles.divider} />
               <div className={styles.updatesSection}>
                 <h3>Your Updates</h3>

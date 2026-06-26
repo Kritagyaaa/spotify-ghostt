@@ -56,3 +56,62 @@ INSERT OR IGNORE INTO playlist_songs (id, playlist_id, song_id, position) VALUES
 (1, 1, 1, 1),
 (2, 1, 2, 2),
 (3, 2, 2, 1);
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  phone_number TEXT,
+  password TEXT,
+  profile_picture TEXT,
+  role TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin')),
+  is_verified BOOLEAN DEFAULT 0,
+  is_google_user BOOLEAN DEFAULT 0,
+  google_id TEXT,
+  last_login DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token TEXT NOT NULL,
+  device_info TEXT,
+  ip_address TEXT,
+  is_active BOOLEAN DEFAULT 1,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS login_activity (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  ip_address TEXT,
+  device_info TEXT,
+  status TEXT CHECK(status IN ('success', 'failed')) NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS otp_verifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  otp_code TEXT NOT NULL,
+  purpose TEXT CHECK(purpose IN ('login', 'reset', 'verify')) NOT NULL,
+  is_used BOOLEAN DEFAULT 0,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
