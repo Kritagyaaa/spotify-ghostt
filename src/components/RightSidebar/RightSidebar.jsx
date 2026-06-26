@@ -4,6 +4,7 @@ import { CreditsCard } from '../cards/CreditsCard.jsx';
 import { NowPlayingCard } from '../cards/NowPlayingCard.jsx';
 import { SidebarHeader } from './SidebarHeader.jsx';
 import styles from './RightSidebar.module.css';
+import placeholder from '../../assets/music-placeholder.jpg';
 
 export function RightSidebar() {
   const { currentSong } = usePlayer();
@@ -26,7 +27,7 @@ export function RightSidebar() {
   const songData = {
     title: currentSong.title,
     artist: currentSong.artist,
-    albumCover: currentSong.cover_url || 'https://placehold.co/400x400?text=♪',
+    albumCover: currentSong.cover_url || placeholder,
     artistInfo: {
       name: currentSong.artist,
       image: currentSong.artist_image || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=90',
