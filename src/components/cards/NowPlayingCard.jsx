@@ -5,7 +5,6 @@ import styles from './NowPlayingCard.module.css';
 export function NowPlayingCard({ song }) {
   const { currentSong, toggleLike } = usePlayer();
   const isLiked = currentSong?.is_liked;
-  const likeCount = currentSong?.like_count || 0;
 
   return (
     <section className={styles.nowPlaying} aria-label={`${song.title} by ${song.artist}`}>
@@ -20,7 +19,7 @@ export function NowPlayingCard({ song }) {
           type="button" 
           aria-label={`Save ${song.title} to your library`}
           onClick={toggleLike}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           <Heart 
             size={21} 
@@ -28,7 +27,6 @@ export function NowPlayingCard({ song }) {
             color={isLiked ? "#1db954" : "#b3b3b3"}
             strokeWidth={2.1} 
           />
-          <span style={{ fontSize: '12px', color: '#b3b3b3', fontWeight: 'bold' }}>{likeCount}</span>
         </button>
       </div>
     </section>

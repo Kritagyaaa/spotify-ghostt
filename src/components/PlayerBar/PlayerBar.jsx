@@ -76,7 +76,7 @@ export function PlayerBar() {
           className={`${styles.savedButton} ${currentSong.is_liked ? styles.liked : ''}`}
           type="button"
           onClick={toggleLike}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
         >
           <Heart
             size={19}
@@ -84,7 +84,6 @@ export function PlayerBar() {
             color={currentSong.is_liked ? "#1db954" : "#b3b3b3"}
             strokeWidth={2.2}
           />
-          <span style={{ fontSize: '11px', color: '#b3b3b3' }}>{currentSong.like_count || 0}</span>
         </button>
       </div>
 

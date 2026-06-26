@@ -117,10 +117,6 @@ export function SongsList() {
                   <span className={styles.genre}>
                     {song.genre}
                   </span>
-                  
-                  <span className={styles.playCount}>
-                    🎧 {song.play_count || 0}
-                  </span>
                 </div>
               </div>
 
@@ -130,7 +126,6 @@ export function SongsList() {
                   onClick={(e) => handleLikeToggle(e, song.id)}
                 >
                   <Heart size={18} fill={song.is_liked ? "#1db954" : "none"} color={song.is_liked ? "#1db954" : "#b3b3b3"} />
-                  <span className={styles.likeCount}>{song.like_count || 0}</span>
                 </button>
 
                 <button
