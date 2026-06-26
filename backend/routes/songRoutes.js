@@ -19,14 +19,6 @@ const expressAuth = async (req, res, next) => {
 /* ==========================
    GET ALL SONGS
 ========================== */
-const expressAuth = async (req, res, next) => {
-    try {
-        await authenticateRequest(req);
-        next();
-    } catch (error) {
-        res.status(error.statusCode || 401).json({ error: error.message });
-    }
-};
 
 router.get("/", getAllSongs);
 
