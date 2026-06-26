@@ -6,9 +6,9 @@ import { PlayerBar } from './components/PlayerBar/PlayerBar.jsx';
 import { RightSidebar } from './components/RightSidebar/RightSidebar.jsx';
 import { MainPage } from './components/MainPage';
 import { PlaylistView } from "./components/PlaylistView/PlaylistView";
-import Login from './components/Auth/Login';
-import SignUp from './components/Auth/SignUp';
-import AccountPage from './components/Auth/AccountPage';
+import Login from './components/Auth/Login.jsx';
+import SignUp from './components/Auth/SignUp.jsx';
+import AccountPage from './components/Auth/AccountPage.jsx';
 
 function App() {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
@@ -34,7 +34,7 @@ function App() {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        await fetch('http://localhost:3001/api/auth/logout', {
+        await fetch('http://localhost:5000/api/auth/logout', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -49,24 +49,36 @@ function App() {
     setCurrentView('main');
   };
 
+  const path = window.location.pathname;
+
+  // If not authenticated and we are on an auth URL path, or if we are not authenticated at all:
   if (!isAuthenticated) {
-    if (showAuthScreen === 'login') {
-      return (
-        <Login
-          onShowSignUp={() => setShowAuthScreen('signup')}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      );
-    } else {
+    if (path.includes("/auth/signup") || showAuthScreen === 'signup') {
       return (
         <SignUp
-          onShowLogin={() => setShowAuthScreen('login')}
-          onSignUpSuccess={() => setShowAuthScreen('login')}
+          onShowLogin={() => {
+            setShowAuthScreen('login');
+            window.history.pushState({}, '', '/auth');
+          }}
+          onSignUpSuccess={() => {
+            setShowAuthScreen('login');
+            window.history.pushState({}, '', '/auth');
+          }}
         />
       );
     }
+    return (
+      <Login
+        onShowSignUp={() => {
+          setShowAuthScreen('signup');
+          window.history.pushState({}, '', '/auth/signup');
+        }}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
   }
 
+  // Home Page
   return (
     <div className={styles.appFrame}>
       <Header
@@ -75,6 +87,7 @@ function App() {
         onLogout={handleLogout}
         onAccountClick={() => setCurrentView('account')}
       />
+
       <div className={styles.appShell}>
         <LibrarySidebar
           onPlaylistSelect={(playlist) => {
@@ -99,8 +112,10 @@ function App() {
             <MainPage />
           )}
         </main>
+
         <RightSidebar />
       </div>
+
       <PlayerBar />
     </div>
   );

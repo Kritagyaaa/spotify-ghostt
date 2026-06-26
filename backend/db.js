@@ -1,11 +1,22 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const { DatabaseSync } = require('node:sqlite');
+const mysql = require("mysql2/promise");
+const fs = require("node:fs");
+const path = require("node:path");
+const { DatabaseSync } = require("node:sqlite");
 
-const rootDir = path.resolve(__dirname, '..');
-const databaseDir = path.join(rootDir, 'database');
+const databaseDir = path.join(__dirname, '../database');
 const databasePath = path.join(databaseDir, 'spotify.sqlite');
 const schemaPath = path.join(databaseDir, 'schema.sql');
+
+const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+});
 
 let dbInstance = null;
 
@@ -26,4 +37,7 @@ function createDatabase() {
   return database;
 }
 
-module.exports = { createDatabase, databasePath };
+pool.createDatabase = createDatabase;
+pool.databasePath = databasePath;
+
+module.exports = pool;

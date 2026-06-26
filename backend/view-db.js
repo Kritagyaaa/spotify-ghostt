@@ -1,61 +1,36 @@
-const { createDatabase } = require('./db');
+// backend/view-db.js
 
-const database = createDatabase();
+const pool = require('./db');
 
-console.log('\n========== MUSIC_FILES TABLE ==========\n');
-const musicFiles = database.prepare('SELECT * FROM music_files').all();
-console.table(musicFiles);
+async function viewDatabase() {
+  try {
+    const tables = [
+      'artists',
+      'albums',
+      'genres',
+      'songs',
+      'playlists',
+      'playlist_songs',
+      'likes',
+      'history',
+      'creators'
+    ];
 
-console.log('\n========== SONGS TABLE ==========\n');
-const songs = database.prepare('SELECT * FROM songs').all();
-console.table(songs);
+    for (const table of tables) {
+      console.log(`\n========== ${table.toUpperCase()} ==========\n`);
 
-console.log('\n========== PLAYLISTS TABLE ==========\n');
-const playlists = database.prepare('SELECT * FROM playlists').all();
-console.table(playlists);
+      const [rows] = await pool.query(
+        `SELECT * FROM ${table}`
+      );
 
-console.log('\n========== PLAYLIST_SONGS TABLE ==========\n');
-const playlistSongs = database.prepare('SELECT * FROM playlist_songs').all();
-console.table(playlistSongs);
+      console.table(rows);
+    }
 
-console.log('\n========== SUMMARY ==========\n');
-console.log(`Total Music Files: ${musicFiles.length}`);
-console.log(`Total Songs: ${songs.length}`);
-console.log(`Total Playlists: ${playlists.length}`);
-console.log(`Total Playlist-Song Links: ${playlistSongs.length}`);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    process.exit();
+  }
+}
 
-console.log('\n========== SONGS WITH FILE INFO ==========\n');
-const songsWithFiles = database
-  .prepare(
-    `SELECT 
-      songs.id,
-      songs.title,
-      songs.artist_name,
-      songs.album_name,
-      songs.duration,
-      songs.genre,
-      music_files.file_name,
-      music_files.file_url
-    FROM songs
-    JOIN music_files ON songs.music_file_id = music_files.id
-    ORDER BY songs.id`,
-  )
-  .all();
-console.table(songsWithFiles);
-
-console.log('\n========== PLAYLISTS WITH SONG COUNT ==========\n');
-const playlistsWithCount = database
-  .prepare(
-    `SELECT 
-      playlists.id,
-      playlists.name,
-      playlists.user_id,
-      playlists.description,
-      COUNT(playlist_songs.id) as song_count
-    FROM playlists
-    LEFT JOIN playlist_songs ON playlists.id = playlist_songs.playlist_id
-    GROUP BY playlists.id
-    ORDER BY playlists.id`,
-  )
-  .all();
-console.table(playlistsWithCount);
+viewDatabase();

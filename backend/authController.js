@@ -7,6 +7,9 @@ const database = createDatabase();
 
 // Helper to read JSON request body
 function readBody(request) {
+  if (request.body !== undefined) {
+    return Promise.resolve(request.body);
+  }
   return new Promise((resolve, reject) => {
     const chunks = [];
     request.on('data', (chunk) => chunks.push(chunk));

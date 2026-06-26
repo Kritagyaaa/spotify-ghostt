@@ -3,24 +3,34 @@
   "private": true,
   "homepage": "https://kritagyaaa.github.io/spotify-ghostt",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "frontend": "vite --host 127.0.0.1",
+    "backend": "nodemon backend/server.js",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "server": "node backend/server.js",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/s3-request-presigner": "^3.1075.0",
     "@vitejs/plugin-react": "latest",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.10.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "latest",
+    "mysql2": "^3.22.5",
     "react": "latest",
     "react-dom": "latest",
-    "react-icons": "^5.0.1",
+    "react-icons": "^5.6.0",
     "vite": "latest"
   },
   "devDependencies": {
-    "gh-pages": "^6.3.0"
+    "concurrently": "^9.0.1",
+    "gh-pages": "^6.3.0",
+    "nodemon": "^3.1.10"
   }
 }

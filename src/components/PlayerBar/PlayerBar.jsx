@@ -4,79 +4,195 @@ import {
   Maximize2,
   Mic2,
   MonitorSpeaker,
+  PauseCircle,
   PlayCircle,
   Repeat2,
   Shuffle,
   SkipBack,
   SkipForward,
   Volume2,
-} from 'lucide-react';
-import styles from './PlayerBar.module.css';
+} from "lucide-react";
 
-const defaultSong = {
-  id: 'song-001',
-  title: 'Midnight City',
-  artist: 'M83',
-  albumCover:
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=90',
-  duration: '4:03',
-};
+import styles from "./PlayerBar.module.css";
+import { usePlayer } from "../../context/PlayerContext";
 
-export function PlayerBar({ song = defaultSong }) {
-  return (
-    <footer className={styles.playerBar} aria-label="Music player">
-      <div className={styles.track}>
-        <img className={styles.albumCover} src={song.albumCover} alt={`${song.title} album cover`} />
-        <div className={styles.songInfo}>
-          <h2>{song.title}</h2>
-          <p>{song.artist}</p>
+export function PlayerBar() {
+  const {
+    currentSong,
+    isPlaying,
+    togglePlay,
+    nextSong,
+    previousSong,
+    currentTime,
+    duration,
+    seek,
+    setVolume,
+  } = usePlayer();
+
+  // Nothing selected yet
+  if (!currentSong) {
+    return (
+      <footer className={styles.playerBar}>
+        <div className={styles.track}>
+          <div className={styles.songInfo}>
+            <h2>No song selected</h2>
+            <p>Select a song to play</p>
+          </div>
         </div>
-        <button className={styles.savedButton} type="button" aria-label={`${song.title} is saved`}>
-          <CheckCircle2 size={19} fill="#1db954" strokeWidth={2.2} />
+      </footer>
+    );
+  }
+
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <footer className={styles.playerBar}>
+      {/* LEFT */}
+      <div className={styles.track}>
+        <img
+          className={styles.albumCover}
+          src={
+            currentSong.cover_url ||
+            "https://placehold.co/64x64?text=♪"
+          }
+          alt={currentSong.title}
+        />
+
+        <div className={styles.songInfo}>
+          <h2>{currentSong.title}</h2>
+          <p>{currentSong.artist}</p>
+        </div>
+
+        <button
+          className={styles.savedButton}
+          type="button"
+        >
+          <CheckCircle2
+            size={19}
+            fill="#1db954"
+            strokeWidth={2.2}
+          />
         </button>
       </div>
 
+      {/* CENTER */}
       <div className={styles.playerCenter}>
-        <div className={styles.controls} aria-label="Playback controls">
-          <button className={styles.controlButton} type="button" aria-label="Shuffle">
+        <div className={styles.controls}>
+          <button
+            className={styles.controlButton}
+          >
             <Shuffle size={18} />
           </button>
-          <button className={styles.controlButton} type="button" aria-label="Previous">
-            <SkipBack size={22} fill="currentColor" />
+
+          <button
+            className={styles.controlButton}
+            onClick={previousSong}
+          >
+            <SkipBack
+              size={22}
+              fill="currentColor"
+            />
           </button>
-          <button className={styles.playButton} type="button" aria-label="Play">
-            <PlayCircle size={38} fill="currentColor" strokeWidth={1.8} />
+
+          <button
+            className={styles.playButton}
+            onClick={togglePlay}
+          >
+            {isPlaying ? (
+              <PauseCircle
+                size={40}
+                fill="currentColor"
+              />
+            ) : (
+              <PlayCircle
+                size={40}
+                fill="currentColor"
+              />
+            )}
           </button>
-          <button className={styles.controlButton} type="button" aria-label="Next">
-            <SkipForward size={22} fill="currentColor" />
+
+          <button
+            className={styles.controlButton}
+            onClick={nextSong}
+          >
+            <SkipForward
+              size={22}
+              fill="currentColor"
+            />
           </button>
-          <button className={styles.controlButton} type="button" aria-label="Repeat">
+
+          <button
+            className={styles.controlButton}
+          >
             <Repeat2 size={18} />
           </button>
         </div>
 
         <div className={styles.progressSection}>
-          <span>0:00</span>
-          <input type="range" min="0" max="100" defaultValue="34" aria-label="Song progress" />
-          <span>{song.duration}</span>
+          <span>{formatTime(currentTime)}</span>
+
+          <input
+            type="range"
+            min={0}
+            max={duration || 0}
+            value={currentTime}
+            onChange={(e) =>
+              seek(Number(e.target.value))
+            }
+          />
+
+          <span>{formatTime(duration)}</span>
         </div>
       </div>
 
+      {/* RIGHT */}
       <div className={styles.extras}>
-        <button className={styles.controlButton} type="button" aria-label="Lyrics">
+        <button
+          className={styles.controlButton}
+        >
           <Mic2 size={18} />
         </button>
-        <button className={styles.controlButton} type="button" aria-label="Queue">
+
+        <button
+          className={styles.controlButton}
+        >
           <ListMusic size={18} />
         </button>
-        <button className={styles.controlButton} type="button" aria-label="Connect to device">
+
+        <button
+          className={styles.controlButton}
+        >
           <MonitorSpeaker size={18} />
         </button>
-        <button className={styles.controlButton} type="button" aria-label="Volume">
+
+        <button
+          className={styles.controlButton}
+        >
           <Volume2 size={18} />
         </button>
-        <input className={styles.volumeSlider} type="range" min="0" max="100" defaultValue="72" aria-label="Volume" />
-        <button className={styles.controlButton} type="button" aria-label="Full screen">
+
+        <input
+          className={styles.volumeSlider}
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          defaultValue={1}
+          onChange={(e) =>
+            setVolume(Number(e.target.value))
+          }
+        />
+
+        <button
+          className={styles.controlButton}
+        >
           <Maximize2 size={17} />
         </button>
       </div>

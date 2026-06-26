@@ -1,25 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from './MainPage.module.css';
-
-const makeCoverArt = (title, background, accent) =>
-  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="${title}">
-      <defs>
-        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="${background}" />
-          <stop offset="100%" stop-color="#111111" />
-        </linearGradient>
-      </defs>
-      <rect width="400" height="400" rx="32" fill="url(#g)" />
-      <circle cx="306" cy="96" r="62" fill="${accent}" opacity="0.9" />
-      <circle cx="90" cy="300" r="84" fill="${accent}" opacity="0.22" />
-      <text x="40" y="252" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700">${title}</text>
-      <text x="40" y="298" fill="#d9d9d9" font-family="Arial, Helvetica, sans-serif" font-size="22">Spotify Ghostt</text>
-    </svg>
-  `)}`;
-
-
+import placeholder from "../../assets/music-placeholder.jpg";
+import { getSongs } from "../../services/api";
+import { usePlayer } from "../../context/PlayerContext";
 
 
 const QUICK_PICKS = [
@@ -30,40 +14,40 @@ const QUICK_PICKS = [
   { id: 5, img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=60&h=60&fit=crop', label: 'The Weeknd' },
 ];
 
-const POPULAR_CARDS = [
-  { id: 1, img: 'https://i.pinimg.com/736x/79/03/25/790325665fefa194156f1bd296b2dc08.jpg', title: 'Ramayana', artist: 'Fever Stories' },
-  { id: 2, img: 'https://i.pinimg.com/736x/56/e7/49/56e7490ed7c4f3d48d799720ab58bae2.jpg', title: 'Mahabharat', artist: 'Pooja Patil' },
-  { id: 3, img: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=220&h=220&fit=crop', title: 'Munshi Premchand', artist: 'Aawaz.com' },
-];
+// const POPULAR_CARDS = [
+//   { id: 1, img: 'https://i.pinimg.com/736x/79/03/25/790325665fefa194156f1bd296b2dc08.jpg', title: 'Ramayana', artist: 'Fever Stories' },
+//   { id: 2, img: 'https://i.pinimg.com/736x/56/e7/49/56e7490ed7c4f3d48d799720ab58bae2.jpg', title: 'Mahabharat', artist: 'Pooja Patil' },
+//   { id: 3, img: 'https://picsum.photos/220?8', title: 'Munshi Premchand', artist: 'Aawaz.com' },
+// ];
 
-const RECENT_CARDS = [
-  { id: 1, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
-  { id: 2, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
-  { id: 3, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
-  { id: 4, img: 'https://i.pinimg.com/736x/44/d1/2d/44d12d66b8c91296e4786dab30bf30bf.jpg', title: 'Alphaville', artist: 'Big in Japan' },
-  { id: 5, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
-  { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
-  { id: 7, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
-];
+// const RECENT_CARDS = [
+//   { id: 1, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
+//   { id: 2, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
+//   { id: 3, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
+//   { id: 4, img: 'https://i.pinimg.com/736x/44/d1/2d/44d12d66b8c91296e4786dab30bf30bf.jpg', title: 'Alphaville', artist: 'Big in Japan' },
+//   { id: 5, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
+//   { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
+//   { id: 7, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
+// ];
 
-const MIXES_CARDS = [
-  { id: 1, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
-  { id: 2, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
-  { id: 3, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
-  { id: 4, img: 'https://i.pinimg.com/736x/44/d1/2d/44d12d66b8c91296e4786dab30bf30bf.jpg', title: 'Alphaville', artist: 'Big in Japan' },
-  { id: 5, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
-  { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
-  { id: 7, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
-];
+// const MIXES_CARDS = [
+//   { id: 1, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
+//   { id: 2, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
+//   { id: 3, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
+//   { id: 4, img: 'https://i.pinimg.com/736x/44/d1/2d/44d12d66b8c91296e4786dab30bf30bf.jpg', title: 'Alphaville', artist: 'Big in Japan' },
+//   { id: 5, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Weeknd,Lily Rose', artist: 'One of the girls' },
+//   { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Taylor Swift', artist: 'Bejewelled' },
+//   { id: 7, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Michael Jackson', artist: 'Earth Song' },
+// ];
 
-const FEATURED_CARDS = [
-  { id: 1, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Featured 1', artist: 'Artist Name' },
-  { id: 2, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Featured 2', artist: 'Artist Name' },
-  { id: 3, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Featured 3', artist: 'Artist Name' },
-  { id: 4, img: 'https://i.pinimg.com/736x/44/d1/2d/44d12d66b8c91296e4786dab30bf30bf.jpg', title: 'Featured 4', artist: 'Artist Name' },
-  { id: 5, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Featured 5', artist: 'Artist Name' },
-  { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Featured 6', artist: 'Artist Name' },
-];
+// const FEATURED_CARDS = [
+//   { id: 1, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Featured 1', artist: 'Artist Name' },
+//   { id: 2, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Featured 2', artist: 'Artist Name' },
+//   { id: 3, img: 'https://i.pinimg.com/736x/30/d0/1d/30d01d1bee3ba3657873a6d12a5878ce.jpg', title: 'Featured 3', artist: 'Artist Name' },
+//   { id: 4, img: 'https://i.pinimg.com/736x/44/d1/2d/44d12d66b8c91296e4786dab30bf30bf.jpg', title: 'Featured 4', artist: 'Artist Name' },
+//   { id: 5, img: 'https://i.pinimg.com/736x/fa/62/3c/fa623c2875bd9ac93a1fe6c1482b21a7.jpg', title: 'Featured 5', artist: 'Artist Name' },
+//   { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Featured 6', artist: 'Artist Name' },
+// ];
 
 export function MainPage() {
   const [showRecentLeftArrow, setShowRecentLeftArrow] = useState(false);
@@ -72,6 +56,22 @@ export function MainPage() {
   const recentRef = useRef(null);
   const mixesRef = useRef(null);
   const featuredRef = useRef(null);
+  const [songs, setSongs] = useState([]);
+
+const { playSong } = usePlayer();
+
+useEffect(() => {
+    async function loadSongs() {
+        try {
+            const data = await getSongs();
+            setSongs(data);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    loadSongs();
+}, []);
 
   const scrollRight = (ref) => {
     if (ref.current) {
@@ -85,13 +85,27 @@ export function MainPage() {
     }
   };
 
-  const MusicCard = ({ card }) => (
-    <div className={styles.musicCard}>
-      <img src={card.img} alt={card.title} />
-      <h3>{card.title}</h3>
-      <p>{card.artist}</p>
-    </div>
-  );
+//   
+const MusicCard = ({ song }) => (
+  <div
+    className={styles.musicCard}
+    onClick={() => {
+      console.log("Card Clicked");
+      console.log(song);
+
+      playSong(song, songs);
+    }}
+  >
+    <img
+      src={song.cover_url || placeholder}
+      alt={song.title}
+    />
+
+    <h3>{song.title}</h3>
+
+    <p>{song.artist}</p>
+  </div>
+);
 
   return (
     <div className={styles.mainContent}>
@@ -115,9 +129,12 @@ export function MainPage() {
         <span>Show all</span>
       </div>
       <div className={styles.cardsRow}>
-        {POPULAR_CARDS.map(card => (
-          <MusicCard key={card.id} card={card} />
-        ))}
+        {songs.slice(0, 3).map(song => (
+    <MusicCard
+        key={song.id}
+        song={song}
+    />
+))}
       </div>
 
       <div className={styles.sectionHeader}>
@@ -134,9 +151,12 @@ export function MainPage() {
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={recentRef}>
-          {RECENT_CARDS.map(card => (
-            <MusicCard key={card.id} card={card} />
-          ))}
+          {songs.slice(0, 7).map(song => (
+    <MusicCard
+        key={song.id}
+        song={song}
+    />
+))}
         </div>
       </div>
 
@@ -154,9 +174,12 @@ export function MainPage() {
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={mixesRef}>
-          {MIXES_CARDS.map(card => (
-            <MusicCard key={card.id} card={card} />
-          ))}
+          {songs.slice(2, 9).map(song => (
+    <MusicCard
+        key={song.id}
+        song={song}
+    />
+))}
           </div>
           </div>
 
@@ -174,9 +197,12 @@ export function MainPage() {
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={featuredRef}>
-          {FEATURED_CARDS.map(card => (
-            <MusicCard key={card.id} card={card} />
-          ))}
+         {songs.slice(1, 7).map(song => (
+    <MusicCard
+        key={song.id}
+        song={song}
+    />
+))}
         </div>
       </div>
     </div>
