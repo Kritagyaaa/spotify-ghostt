@@ -49,7 +49,10 @@ const QUICK_PICKS = [
 //   { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Featured 6', artist: 'Artist Name' },
 // ];
 
-export function MainPage() {
+export function MainPage({
+    searchQuery,
+    searchResults,
+}) {
   const [showRecentLeftArrow, setShowRecentLeftArrow] = useState(false);
   const [showMixesLeftArrow, setShowMixesLeftArrow] = useState(false);
   const [showFeaturedLeftArrow, setShowFeaturedLeftArrow] = useState(false);
@@ -57,8 +60,8 @@ export function MainPage() {
   const mixesRef = useRef(null);
   const featuredRef = useRef(null);
   const [songs, setSongs] = useState([]);
-
-const { playSong } = usePlayer();
+ 
+  const { playSong } = usePlayer();
 
 useEffect(() => {
     async function loadSongs() {
@@ -84,6 +87,11 @@ useEffect(() => {
       ref.current.scrollLeft -= 400;
     }
   };
+
+const displayedSongs =
+    searchQuery.trim() !== ""
+        ? searchResults
+        : songs;
 
 //   
 const MusicCard = ({ song }) => (
@@ -125,11 +133,15 @@ const MusicCard = ({ song }) => (
       </div>
 
       <div className={styles.sectionHeader}>
-        <h2>Popular with listeners of Mahabharat</h2>
+        <h2>
+    {searchQuery
+        ? `Search Results (${displayedSongs.length})`
+        : "Popular with listeners of MJ"}
+</h2>
         <span>Show all</span>
       </div>
       <div className={styles.cardsRow}>
-        {songs.slice(0, 3).map(song => (
+        {displayedSongs.slice(0,3).map(song => (
     <MusicCard
         key={song.id}
         song={song}
@@ -151,7 +163,7 @@ const MusicCard = ({ song }) => (
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={recentRef}>
-          {songs.slice(0, 7).map(song => (
+          {displayedSongs.slice(0,7).map(song => (
     <MusicCard
         key={song.id}
         song={song}
@@ -174,7 +186,7 @@ const MusicCard = ({ song }) => (
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={mixesRef}>
-          {songs.slice(2, 9).map(song => (
+          {displayedSongs.slice(2,9).map(song => (
     <MusicCard
         key={song.id}
         song={song}
@@ -197,7 +209,7 @@ const MusicCard = ({ song }) => (
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={featuredRef}>
-         {songs.slice(1, 7).map(song => (
+         {displayedSongs.slice(1,7).map(song => (
     <MusicCard
         key={song.id}
         song={song}

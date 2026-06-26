@@ -241,3 +241,9 @@ SELECT COUNT(*) AS songs FROM songs;
 FROM songs;
 UPDATE songs
 SET b2_key = CONCAT(id, '.mp3');
+
+ALTER TABLE artists
+ADD COLUMN cover_url VARCHAR(500);
+
+ALTER TABLE songs
+ADD COLUMN cover_url VARCHAR(500);

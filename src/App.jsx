@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { searchSongs } from "./services/api";
 import styles from './App.module.css';
 import { useState } from "react";
 import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
@@ -13,6 +15,9 @@ import AccountPage from './components/Auth/AccountPage.jsx';
 
 function App() {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [user, setUser] = useState(() => {
     try {
@@ -24,6 +29,32 @@ function App() {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+
+  const timer = setTimeout(async () => {
+
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+
+      const results = await searchSongs(searchQuery);
+
+      setSearchResults(results);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  }, 300);
+
+  return () => clearTimeout(timer);
+
+}, [searchQuery]);
   const handleLoginSuccess = (token, loggedInUser) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(loggedInUser));
@@ -59,15 +90,18 @@ function App() {
 
     return (
       <div className={styles.appFrame}>
-        <Header
-          onHomeClick={() => {
-            setSelectedPlaylist(null);
-            navigate('/');
-          }}
-          user={user}
-          onLogout={handleLogout}
-          onAccountClick={() => navigate('/profile')}
-        />
+      <Header
+  onHomeClick={() => {
+    setSelectedPlaylist(null);
+    setSearchQuery("");
+    navigate("/");
+  }}
+  user={user}
+  onLogout={handleLogout}
+  onAccountClick={() => navigate("/profile")}
+  searchQuery={searchQuery}
+  setSearchQuery={setSearchQuery}
+/>
 
         <div className={styles.appShell}>
           <LibrarySidebar
@@ -135,7 +169,10 @@ function App() {
             selectedPlaylist ? (
               <PlaylistView playlist={selectedPlaylist} />
             ) : (
-              <MainPage />
+             <MainPage
+    searchQuery={searchQuery}
+    searchResults={searchResults}
+/>
             )
           }
         />

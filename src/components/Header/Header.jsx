@@ -13,7 +13,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Header.module.css';
 
-export function Header({ onHomeClick, user, onLogout, onAccountClick }) {
+export function Header({
+  onHomeClick,
+  user,
+  onLogout,
+  onAccountClick,
+  searchQuery,
+  setSearchQuery,
+}) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
 
@@ -50,7 +57,13 @@ export function Header({ onHomeClick, user, onLogout, onAccountClick }) {
 
         <label className={styles.searchBox}>
           <Search size={22} strokeWidth={2.2} />
-          <input type="text" placeholder="What do you want to play?" aria-label="Search music" />
+          <input
+  type="text"
+  placeholder="What do you want to play?"
+  aria-label="Search music"
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+/>
           <Briefcase size={22} strokeWidth={2.1} />
         </label>
       </div>
