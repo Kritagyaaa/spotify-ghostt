@@ -104,6 +104,10 @@ const MusicCard = ({ song }) => (
     <h3>{song.title}</h3>
 
     <p>{song.artist}</p>
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#b3b3b3', marginTop: '4px' }}>
+      <span>🎧 {song.play_count || 0}</span>
+      <span>❤️ {song.like_count || 0}</span>
+    </div>
   </div>
 );
 

@@ -1,5 +1,5 @@
 import {
-  CheckCircle2,
+    Heart,
   ListMusic,
   Maximize2,
   Mic2,
@@ -28,6 +28,7 @@ export function PlayerBar() {
     duration,
     seek,
     setVolume,
+    toggleLike,
   } = usePlayer();
 
   // Nothing selected yet
@@ -72,14 +73,18 @@ export function PlayerBar() {
         </div>
 
         <button
-          className={styles.savedButton}
+          className={`${styles.savedButton} ${currentSong.is_liked ? styles.liked : ''}`}
           type="button"
+          onClick={toggleLike}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
         >
-          <CheckCircle2
+          <Heart
             size={19}
-            fill="#1db954"
+            fill={currentSong.is_liked ? "#1db954" : "none"}
+            color={currentSong.is_liked ? "#1db954" : "#b3b3b3"}
             strokeWidth={2.2}
           />
+          <span style={{ fontSize: '11px', color: '#b3b3b3' }}>{currentSong.like_count || 0}</span>
         </button>
       </div>
 

@@ -6,7 +6,7 @@ import {
     useEffect,
 } from "react";
 
-import { getSongStream } from "../services/api";
+import { getSongStream, toggleLikeSong } from "../services/api";
 
 const PlayerContext = createContext();
 
@@ -71,7 +71,11 @@ console.log("STREAM URL:", streamUrl);
 
             await audioRef.current.play();
 
-            setCurrentSong(song);
+            // Locally increment play count for immediate feedback
+            setCurrentSong({
+                ...song,
+                play_count: (song.play_count || 0) + 1
+            });
 
             setIsPlaying(true);
 
@@ -133,6 +137,35 @@ console.log("STREAM URL:", streamUrl);
 
     };
 
+    const toggleLike = async () => {
+        if (!currentSong) return;
+        try {
+            const res = await toggleLikeSong(currentSong.id);
+            setCurrentSong(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    is_liked: res.liked ? 1 : 0,
+                    like_count: res.liked ? (prev.like_count || 0) + 1 : Math.max(0, (prev.like_count || 0) - 1)
+                };
+            });
+            // Update in queue
+            setQueue(prevQueue => prevQueue.map(s => {
+                if (s.id === currentSong.id) {
+                    return {
+                        ...s,
+                        is_liked: res.liked ? 1 : 0,
+                        like_count: res.liked ? (s.like_count || 0) + 1 : Math.max(0, (s.like_count || 0) - 1)
+                    };
+                }
+                return s;
+            }));
+        } catch (err) {
+            console.error("Failed to toggle like:", err);
+            throw err;
+        }
+    };
+
     return (
 
         <PlayerContext.Provider
@@ -148,6 +181,7 @@ console.log("STREAM URL:", streamUrl);
                 previousSong,
                 seek,
                 setVolume,
+                toggleLike,
             }}
         >
 
