@@ -4,8 +4,8 @@ import {
   Maximize2,
   Mic2,
   MonitorSpeaker,
-  PauseCircle,
-  PlayCircle,
+  Pause,
+  Play,
   Repeat2,
   Shuffle,
   SkipBack,
@@ -85,9 +85,7 @@ export function PlayerBar() {
       {/* CENTER */}
       <div className={styles.playerCenter}>
         <div className={styles.controls}>
-          <button
-            className={styles.controlButton}
-          >
+          <button className={styles.controlButton}>
             <Shuffle size={18} />
           </button>
 
@@ -106,14 +104,17 @@ export function PlayerBar() {
             onClick={togglePlay}
           >
             {isPlaying ? (
-              <PauseCircle
-                size={40}
-                fill="currentColor"
+              <Pause
+                size={22}
+                color="black"
+                strokeWidth={3}
               />
             ) : (
-              <PlayCircle
-                size={40}
-                fill="currentColor"
+              <Play
+                size={22}
+                color="black"
+                fill="black"
+                strokeWidth={2.5}
               />
             )}
           </button>
@@ -128,9 +129,7 @@ export function PlayerBar() {
             />
           </button>
 
-          <button
-            className={styles.controlButton}
-          >
+          <button className={styles.controlButton}>
             <Repeat2 size={18} />
           </button>
         </div>
@@ -154,27 +153,19 @@ export function PlayerBar() {
 
       {/* RIGHT */}
       <div className={styles.extras}>
-        <button
-          className={styles.controlButton}
-        >
+        <button className={styles.controlButton}>
           <Mic2 size={18} />
         </button>
 
-        <button
-          className={styles.controlButton}
-        >
+        <button className={styles.controlButton}>
           <ListMusic size={18} />
         </button>
 
-        <button
-          className={styles.controlButton}
-        >
+        <button className={styles.controlButton}>
           <MonitorSpeaker size={18} />
         </button>
 
-        <button
-          className={styles.controlButton}
-        >
+        <button className={styles.controlButton}>
           <Volume2 size={18} />
         </button>
 
@@ -190,9 +181,7 @@ export function PlayerBar() {
           }
         />
 
-        <button
-          className={styles.controlButton}
-        >
+        <button className={styles.controlButton}>
           <Maximize2 size={17} />
         </button>
       </div>

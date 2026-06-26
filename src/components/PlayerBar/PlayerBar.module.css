@@ -66,7 +66,7 @@
 
 .controls {
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .extras {
@@ -75,41 +75,62 @@
   gap: 8px;
 }
 
+/* -------------------- */
+/* NORMAL ICON BUTTONS  */
+/* -------------------- */
+
 .controlButton,
-.savedButton,
-.playButton {
+.savedButton {
   display: inline-grid;
   width: 32px;
   height: 32px;
   padding: 0;
-  border: 0;
-  color: #b3b3b3;
+  border: none;
   background: transparent;
+  color: #b3b3b3;
   cursor: pointer;
   place-items: center;
-  transition:
-    color 160ms ease,
-    transform 160ms ease;
+  transition: all .2s ease;
 }
 
 .controlButton:hover,
-.savedButton:hover,
-.playButton:hover {
+.savedButton:hover {
   color: #fff;
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
+/* -------------------- */
+/* SPOTIFY PLAY BUTTON  */
+/* -------------------- */
+
 .playButton {
-  width: 42px;
-  height: 42px;
-  color: #fff;
+  width: 48px;
+  height: 48px;
+
+  border: none;
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+
+  transition: transform .15s ease;
 }
+
+.playButton:hover {
+  transform: scale(1.08);
+}
+
+/* -------------------- */
 
 .controlButton:focus-visible,
 .savedButton:focus-visible,
 .playButton:focus-visible {
-  border-radius: 50%;
-  outline: 2px solid #fff;
+  outline: 2px solid white;
   outline-offset: 2px;
 }
 

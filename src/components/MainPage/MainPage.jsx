@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import styles from './MainPage.module.css';
 import placeholder from "../../assets/music-placeholder.jpg";
 import { getSongs } from "../../services/api";
