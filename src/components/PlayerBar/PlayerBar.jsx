@@ -2,6 +2,7 @@ import {
     Heart,
   ListMusic,
   Maximize2,
+  Minimize2,
   Mic2,
   MonitorSpeaker,
   Pause,
@@ -30,6 +31,8 @@ export function PlayerBar() {
     volume,
     setVolume,
     toggleLike,
+    isExpanded,
+    toggleExpand,
   } = usePlayer();
 
   // Nothing selected yet
@@ -242,8 +245,8 @@ export function PlayerBar() {
           }
         />
 
-        <button className={styles.controlButton}>
-          <Maximize2 size={17} />
+        <button className={styles.controlButton} onClick={toggleExpand} aria-label={isExpanded ? "Collapse now playing view" : "Expand now playing view"}>
+          {isExpanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
         </button>
       </div>
     </footer>

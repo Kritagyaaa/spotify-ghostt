@@ -26,6 +26,12 @@ export function PlayerProvider({ children }) {
 
     const [volume, setVolumeState] = useState(0.20);
 
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const toggleExpand = () => {
+        setIsExpanded(prev => !prev);
+    };
+
     // Keep mutable refs of state to avoid stale closure issues in event listeners
     const queueRef = useRef([]);
     const currentSongRef = useRef(null);
@@ -271,6 +277,8 @@ export function PlayerProvider({ children }) {
                 volume,
                 setVolume,
                 toggleLike,
+                isExpanded,
+                toggleExpand,
             }}
         >
 

@@ -12,6 +12,8 @@ import Login from './components/Auth/Login.jsx';
 import SignUp from './components/Auth/SignUp.jsx';
 import AccountPage from './components/Auth/AccountPage.jsx';
 import { HistoryView } from './components/HistoryView/HistoryView.jsx';
+import { usePlayer } from './context/PlayerContext.jsx';
+import { ExpandedPlayer } from './components/ExpandedPlayer/ExpandedPlayer.jsx';
 
 function ProtectedLayout({
   isAuthenticated,
@@ -25,6 +27,8 @@ function ProtectedLayout({
   searchResults,
   setSearchResults,
 }) {
+  const { isExpanded } = usePlayer();
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -46,24 +50,30 @@ function ProtectedLayout({
         setSearchResults={setSearchResults}
       />
 
-      <div className={styles.appShell}>
-        <LibrarySidebar
-          onPlaylistSelect={(playlist) => {
-            setSelectedPlaylist(playlist);
-            setSearchQuery("");
-            navigate('/');
-          }}
-          selectedPlaylist={selectedPlaylist}
-        />
-        <main
-          className={styles.mainPlaceholder}
-          aria-label="Main content"
-        >
-          <Outlet />
-        </main>
+      {isExpanded ? (
+        <div className={styles.appShellExpanded}>
+          <ExpandedPlayer />
+        </div>
+      ) : (
+        <div className={styles.appShell}>
+          <LibrarySidebar
+            onPlaylistSelect={(playlist) => {
+              setSelectedPlaylist(playlist);
+              setSearchQuery("");
+              navigate('/');
+            }}
+            selectedPlaylist={selectedPlaylist}
+          />
+          <main
+            className={styles.mainPlaceholder}
+            aria-label="Main content"
+          >
+            <Outlet />
+          </main>
 
-        <RightSidebar />
-      </div>
+          <RightSidebar />
+        </div>
+      )}
 
       <PlayerBar />
     </div>
