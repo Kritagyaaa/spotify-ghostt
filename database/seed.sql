@@ -125,4 +125,15 @@ SELECT COUNT(*) AS albums FROM albums;
 SELECT COUNT(*) AS genres FROM genres;
 SELECT COUNT(*) AS songs FROM songs;
 
-SELECT id, title, b2_key FROM songs ORDER BY id;
+ SELECT id, title, b2_key
+FROM songs;
+UPDATE songs
+SET b2_key = CONCAT(id, '.mp3');
+
+ALTER TABLE artists
+ADD COLUMN cover_url VARCHAR(500);
+
+ALTER TABLE songs
+ADD COLUMN cover_url VARCHAR(500),
+ADD COLUMN like_count INT DEFAULT 0;
+

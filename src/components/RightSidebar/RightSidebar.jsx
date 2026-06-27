@@ -1,4 +1,4 @@
-import { usePlayer } from '../../context/playercontext.jsx';
+import { usePlayer } from '../../context/PlayerContext';
 import { AboutArtistCard } from '../cards/AboutArtistCard.jsx';
 import { CreditsCard } from '../cards/CreditsCard.jsx';
 import { NowPlayingCard } from '../cards/NowPlayingCard.jsx';

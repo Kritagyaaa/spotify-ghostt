@@ -1,5 +1,5 @@
 import { Heart } from 'lucide-react';
-import { usePlayer } from '../../context/playercontext';
+import { usePlayer } from '../../context/PlayerContext';
 import styles from './NowPlayingCard.module.css';
 
 export function NowPlayingCard({ song }) {

@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { searchSongs } from "./services/api";
 import styles from './App.module.css';
 import { useState } from "react";
 import { Routes, Route, Navigate, useNavigate, Outlet } from 'react-router-dom';
@@ -13,10 +11,68 @@ import Login from './components/Auth/Login.jsx';
 import SignUp from './components/Auth/SignUp.jsx';
 import AccountPage from './components/Auth/AccountPage.jsx';
 
+function ProtectedLayout({
+  isAuthenticated,
+  selectedPlaylist,
+  setSelectedPlaylist,
+  user,
+  handleLogout,
+  navigate,
+  searchQuery,
+  setSearchQuery,
+  searchResults,
+  setSearchResults,
+}) {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <div className={styles.appFrame}>
+      <Header
+        onHomeClick={() => {
+          setSelectedPlaylist(null);
+          setSearchQuery("");
+          navigate("/");
+        }}
+        user={user}
+        onLogout={handleLogout}
+        onAccountClick={() => navigate("/profile")}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        searchResults={searchResults}
+        setSearchResults={setSearchResults}
+      />
+
+      <div className={styles.appShell}>
+        <LibrarySidebar
+          onPlaylistSelect={(playlist) => {
+            setSelectedPlaylist(playlist);
+            setSearchQuery("");
+            navigate('/');
+          }}
+          selectedPlaylist={selectedPlaylist}
+        />
+        <main
+          className={styles.mainPlaceholder}
+          aria-label="Main content"
+        >
+          <Outlet />
+        </main>
+
+        <RightSidebar />
+      </div>
+
+      <PlayerBar />
+    </div>
+  );
+}
+
 function App() {
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+
 
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [user, setUser] = useState(() => {
@@ -162,7 +218,22 @@ function App() {
       <Route path="/auth/signup" element={<Navigate to="/signup" replace />} />
 
       {/* Protected Routes inside the App Layout */}
-      <Route element={<AppLayout />}>
+      <Route
+        element={
+          <ProtectedLayout
+            isAuthenticated={isAuthenticated}
+            selectedPlaylist={selectedPlaylist}
+            setSelectedPlaylist={setSelectedPlaylist}
+            user={user}
+            handleLogout={handleLogout}
+            navigate={navigate}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            searchResults={searchResults}
+            setSearchResults={setSearchResults}
+          />
+        }
+      >
         <Route
           path="/"
           element={

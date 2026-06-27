@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import styles from "./PlayerBar.module.css";
-import { usePlayer } from "../../context/playercontext";
+import { usePlayer } from "../../context/PlayerContext";
 import placeholder from "../../assets/music-placeholder.jpg";
 
 export function PlayerBar() {

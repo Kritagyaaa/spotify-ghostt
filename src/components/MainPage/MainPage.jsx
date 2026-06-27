@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import styles from './MainPage.module.css';
 import placeholder from "../../assets/music-placeholder.jpg";
 import { getSongs } from "../../services/api";
-import { usePlayer } from "../../context/playercontext";
+import { usePlayer } from "../../context/PlayerContext";
 
 
 const QUICK_PICKS = [
@@ -49,7 +49,10 @@ const QUICK_PICKS = [
 //   { id: 6, img: 'https://i.pinimg.com/736x/4f/02/ec/4f02ec86a0cb37e6f64c319e9c874252.jpg', title: 'Featured 6', artist: 'Artist Name' },
 // ];
 
-export function MainPage() {
+export function MainPage({
+    searchQuery = "",
+    searchResults = [],
+}) {
   const [showRecentLeftArrow, setShowRecentLeftArrow] = useState(false);
   const [showMixesLeftArrow, setShowMixesLeftArrow] = useState(false);
   const [showFeaturedLeftArrow, setShowFeaturedLeftArrow] = useState(false);
@@ -59,6 +62,8 @@ export function MainPage() {
   const [songs, setSongs] = useState([]);
 
   const { playSong } = usePlayer();
+
+  const displayedSongs = songs;
 
   useEffect(() => {
     async function loadSongs() {
@@ -86,14 +91,12 @@ export function MainPage() {
   };
 
   //   
+
   const MusicCard = ({ song }) => (
     <div
       className={styles.musicCard}
       onClick={() => {
-        console.log("Card Clicked");
-        console.log(song);
-
-        playSong(song, songs);
+        playSong(song, displayedSongs);
       }}
     >
       <img
@@ -129,7 +132,7 @@ export function MainPage() {
         <span>Show all</span>
       </div>
       <div className={styles.cardsRow}>
-        {songs.slice(0, 3).map(song => (
+        {displayedSongs.slice(0, 3).map(song => (
           <MusicCard
             key={song.id}
             song={song}
@@ -151,7 +154,7 @@ export function MainPage() {
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={recentRef}>
-          {songs.slice(0, 7).map(song => (
+          {displayedSongs.slice(0, 7).map(song => (
             <MusicCard
               key={song.id}
               song={song}
@@ -174,7 +177,7 @@ export function MainPage() {
           <ChevronRight size={20} />
         </button>
         <div className={styles.cardsRow} ref={mixesRef}>
-          {songs.slice(2, 9).map(song => (
+          {displayedSongs.slice(2, 9).map(song => (
             <MusicCard
               key={song.id}
               song={song}

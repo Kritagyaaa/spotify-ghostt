@@ -1,3 +1,4 @@
+import { SearchDropdown } from "../SearchDropdown/SearchDropdown";
 import {
   Bell,
   Briefcase,
@@ -9,10 +10,10 @@ import {
   ExternalLink,
   Check,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Header.module.css';
-
+import { searchSongs } from "../../services/api";
 export function Header({
   onHomeClick,
   user,
@@ -20,10 +21,40 @@ export function Header({
   onAccountClick,
   searchQuery,
   setSearchQuery,
+  searchResults,
+  setSearchResults,
 }) {
+
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        setShowSearch(false);
+        return;
+      }
+
+      try {
+        const results = await searchSongs(searchQuery, {
+          signal: controller.signal,
+        });
+        setSearchResults(results);
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        console.error(err);
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [searchQuery, setSearchResults]);
   return (
     <header className={styles.navbar} aria-label="Main navigation">
       <div className={styles.left}>
@@ -55,17 +86,38 @@ export function Header({
           <Home size={26} fill="currentColor" strokeWidth={2.1} />
         </button>
 
-        <label className={styles.searchBox}>
+        <div className={styles.searchContainer}>
+          <label className={styles.searchBox}>
           <Search size={22} strokeWidth={2.2} />
           <input
-  type="text"
-  placeholder="What do you want to play?"
-  aria-label="Search music"
-  value={searchQuery}
-  onChange={(e) => setSearchQuery(e.target.value)}
+    type="text"
+    placeholder="What do you want to play?"
+    aria-label="Search music"
+    value={searchQuery}
+  onChange={(e) => {
+
+    setSearchQuery(e.target.value);
+
+    if (e.target.value.trim()) {
+        setShowSearch(true);
+    }
+
+}}
+    onFocus={() => {
+        if (searchResults.length > 0) {
+            setShowSearch(true);
+        }
+    }}
 />
           <Briefcase size={22} strokeWidth={2.1} />
-        </label>
+          </label>
+
+          <SearchDropdown
+            results={searchResults}
+            visible={showSearch}
+            onClose={() => setShowSearch(false)}
+          />
+        </div>
       </div>
 
       <div className={styles.right}>
