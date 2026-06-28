@@ -12,9 +12,10 @@ import {
   SkipBack,
   SkipForward,
   Volume2,
+  VolumeX,
   Plus,
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import styles from "./PlayerBar.module.css";
@@ -53,6 +54,22 @@ export function PlayerBar() {
   const { playlists, loadPlaylists, refreshSelectedPlaylist } = usePlaylists();
   const [showAddToPlaylistDropdown, setShowAddToPlaylistDropdown] = useState(false);
   const [showCreateModel, setShowCreateModel] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const prevVolumeRef = useRef(volume);
+
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      // Unmute: restore previous volume
+      const restored = prevVolumeRef.current > 0 ? prevVolumeRef.current : 0.2;
+      setVolume(restored);
+      setIsMuted(false);
+    } else {
+      // Mute: save current volume and set to 0
+      prevVolumeRef.current = volume;
+      setVolume(0);
+      setIsMuted(true);
+    }
+  }, [isMuted, volume, setVolume]);
 
   const addToPlaylistDropdownRef = useRef(null);
 
@@ -136,7 +153,7 @@ export function PlayerBar() {
             <MonitorSpeaker size={18} />
           </button>
           <button className={`${styles.controlButton} ${styles.disabled}`} disabled>
-            <Volume2 size={18} />
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
           <input
             className={styles.volumeSlider}
@@ -144,8 +161,13 @@ export function PlayerBar() {
             min={0}
             max={1}
             step={0.01}
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
+            value={isMuted ? 0 : volume}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              if (isMuted && val > 0) setIsMuted(false);
+              prevVolumeRef.current = val;
+              setVolume(val);
+            }}
           />
           <button className={`${styles.controlButton} ${styles.disabled}`} disabled>
             <Maximize2 size={17} />
@@ -329,8 +351,13 @@ export function PlayerBar() {
           <MonitorSpeaker size={18} />
         </button>
 
-        <button className={styles.controlButton}>
-          <Volume2 size={18} />
+        <button
+          className={`${styles.controlButton} ${isMuted ? styles.activeControl : ""}`}
+          onClick={toggleMute}
+          title={isMuted ? "Unmute" : "Mute"}
+          aria-label={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
 
         <input
@@ -339,10 +366,13 @@ export function PlayerBar() {
           min={0}
           max={1}
           step={0.01}
-          value={volume}
-          onChange={(e) =>
-            setVolume(Number(e.target.value))
-          }
+          value={isMuted ? 0 : volume}
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            if (isMuted && val > 0) setIsMuted(false);
+            prevVolumeRef.current = val;
+            setVolume(val);
+          }}
         />
 
         <button className={styles.controlButton} onClick={toggleExpand} aria-label={isExpanded ? "Collapse now playing view" : "Expand now playing view"}>
