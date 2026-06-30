@@ -22,12 +22,14 @@ console.log("DB_NAME:", process.env.DB_NAME);
 const songRoutes = require("./routes/songRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
 const playlistRoutes = require("./routes/playlistRoutes");
+const fileRoutes = require("./routes/fileRoutes");
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/files', fileRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
