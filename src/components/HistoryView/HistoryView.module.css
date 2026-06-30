@@ -141,7 +141,7 @@
 
 .tableHeader {
   display: grid;
-  grid-template-columns: 50px 4fr 3fr 2fr 120px;
+  grid-template-columns: 50px minmax(0, 4fr) minmax(0, 3fr) 2fr 120px;
   padding: 8px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   color: #b3b3b3;
@@ -166,12 +166,17 @@
 
 .songRow {
   display: grid;
-  grid-template-columns: 50px 4fr 3fr 2fr 120px;
+  grid-template-columns: 50px minmax(0, 4fr) minmax(0, 3fr) 2fr 120px;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   align-items: center;
+}
+
+.colTitle {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .songRow:hover {
@@ -196,6 +201,7 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
 }
 
 .coverWrapper {
@@ -233,6 +239,8 @@
 .titleArtist {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .songTitle {
@@ -242,6 +250,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: block;
+  width: 100%;
 }
 
 .greenText {
@@ -251,6 +261,11 @@
 .songArtist {
   font-size: 13px;
   color: #b3b3b3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
 }
 
 .songRow:hover .songArtist {
@@ -263,6 +278,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  display: block;
+  width: 100%;
 }
 
 .songRow:hover .colAlbum {
