@@ -40,7 +40,7 @@ const SOCIAL_ICONS = {
   ),
 };
 
-export function SocialButtons({ authType = 'login', onPhoneLoginClick, onGoogleClick }) {
+export function SocialButtons({ authType = 'login', onPhoneLoginClick, onGoogleClick, onCreatorSignUpClick }) {
   const loginText = authType === 'login' ? 'login with' : 'sign up with';
 
   return (
@@ -66,11 +66,11 @@ export function SocialButtons({ authType = 'login', onPhoneLoginClick, onGoogleC
       </button>
 
       {authType === 'signup' && (
-        <button className="social-btn add-songs-btn">
+        <button className="social-btn add-songs-btn" onClick={onCreatorSignUpClick}>
           <span className="social-icon">
             <Music size={18} />
           </span>
-          Add your songs
+          Sign up as creator
         </button>
       )}
     </>

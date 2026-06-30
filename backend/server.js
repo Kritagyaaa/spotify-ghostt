@@ -54,6 +54,9 @@ app.post("/api/auth/logout", expressAuth, (req, res) => auth.handleLogout(req, r
 app.post("/api/auth/send-otp", (req, res) => auth.handleSendOtp(req, res));
 app.post("/api/auth/verify-otp", (req, res) => auth.handleVerifyOtp(req, res));
 app.post("/api/auth/reset-password", (req, res) => auth.handleResetPassword(req, res));
+app.post("/api/auth/forgot-password", (req, res) => auth.handleForgotPasswordLink(req, res));
+app.get("/api/auth/verify-reset-token", (req, res) => auth.handleVerifyResetToken(req, res));
+app.post("/api/auth/reset-password-with-token", (req, res) => auth.handleResetPasswordWithToken(req, res));
 app.post("/api/auth/refresh-token", expressAuth, (req, res) => auth.handleRefreshToken(req, res));
 
 app.get("/api/user/profile", expressAuth, (req, res) => auth.handleGetProfile(req, res));

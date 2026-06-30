@@ -49,6 +49,7 @@ function Login({ onShowSignUp, onLoginSuccess }) {
       return;
     }
     setError('');
+    setMessage('');
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
@@ -58,6 +59,13 @@ function Login({ onShowSignUp, onLoginSuccess }) {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.code === 'UNVERIFIED_ACCOUNT') {
+          setDummyOtp(data.otp || '');
+          setError('Your email is not verified yet. We sent a verification code to your email.');
+          setLoginMethod('verify_signup_otp');
+          setOtp('');
+          return;
+        }
         throw new Error(data.error || 'Login failed.');
       }
       onLoginSuccess?.(data.token, data.user);
@@ -75,6 +83,7 @@ function Login({ onShowSignUp, onLoginSuccess }) {
       return;
     }
     setError('');
+    setMessage('');
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/send-otp`, {
@@ -122,6 +131,34 @@ function Login({ onShowSignUp, onLoginSuccess }) {
     }
   };
 
+  const handleSendResetLink = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setError('Please enter your email.');
+      return;
+    }
+    setError('');
+    setMessage('');
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send reset link.');
+      }
+      setDummyOtp(data.token ? `Link Token: ${data.token}` : '');
+      setMessage('Password reset link sent successfully! Please check your email.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendResetOtp = async (e) => {
     e.preventDefault();
     if (!email) {
@@ -129,6 +166,7 @@ function Login({ onShowSignUp, onLoginSuccess }) {
       return;
     }
     setError('');
+    setMessage('');
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/send-otp`, {
@@ -145,6 +183,37 @@ function Login({ onShowSignUp, onLoginSuccess }) {
       setLoginMethod('forgot_reset');
       setOtp('');
       setPassword('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySignupOtp = async (e) => {
+    e.preventDefault();
+    if (!otp) {
+      setError('Please enter the OTP.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp_code: otp, purpose: 'verify' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Invalid verification code.');
+      }
+      alert('Verification successful! You can now log in.');
+      setLoginMethod('email');
+      setError('');
+      setMessage('Account verified successfully. Please enter your password to log in.');
+      setOtp('');
+      setDummyOtp('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -328,9 +397,9 @@ function Login({ onShowSignUp, onLoginSuccess }) {
             </form>
           )}
 
-          {/* Forgot Password - Email Entry Flow */}
+          {/* Forgot Password - Choice of Reset Link or Reset OTP */}
           {loginMethod === 'forgot_email' && (
-            <form onSubmit={handleSendResetOtp}>
+            <div>
               <div style={{ textAlign: 'left' }}>
                 <label>Registered Email Address</label>
                 <input
@@ -342,11 +411,42 @@ function Login({ onShowSignUp, onLoginSuccess }) {
                 />
               </div>
 
-              <button className="auth-btn" type="submit" disabled={loading}>
-                {loading ? 'Requesting OTP...' : 'Send Reset OTP'}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button
+                  className="auth-btn"
+                  onClick={handleSendResetLink}
+                  disabled={loading}
+                  style={{ marginBottom: 0 }}
+                >
+                  {loading ? 'Sending Reset Link...' : 'Send Reset Link'}
+                </button>
+                
+                <button
+                  className="auth-btn"
+                  onClick={handleSendResetOtp}
+                  disabled={loading}
+                  style={{ background: 'transparent', border: '1px solid #1db954', color: '#1db954', marginBottom: 0 }}
+                >
+                  {loading ? 'Requesting OTP...' : 'Send Reset OTP'}
+                </button>
+              </div>
 
-              <p style={{ marginTop: '10px', fontSize: '13px' }}>
+              {dummyOtp && (
+                <div style={{
+                  background: 'rgba(29, 185, 84, 0.1)',
+                  border: '1px solid #1db954',
+                  borderRadius: '4px',
+                  padding: '10px',
+                  marginTop: '20px',
+                  fontSize: '12px',
+                  color: '#1db954',
+                  textAlign: 'left'
+                }}>
+                  <strong>Testing Box:</strong> {dummyOtp}
+                </div>
+              )}
+
+              <p style={{ marginTop: '20px', fontSize: '13px' }}>
                 <a
                   href="#"
                   style={{ color: '#b3b3b3', textDecoration: 'none', fontWeight: 'bold' }}
@@ -360,7 +460,7 @@ function Login({ onShowSignUp, onLoginSuccess }) {
                   Back to Login
                 </a>
               </p>
-            </form>
+            </div>
           )}
 
           {/* Forgot Password - OTP Verification and Password Reset Flow */}
@@ -426,6 +526,61 @@ function Login({ onShowSignUp, onLoginSuccess }) {
                   }}
                 >
                   Change Email or Resend OTP
+                </a>
+              </p>
+            </form>
+          )}
+
+          {/* Unverified Account Verification Flow */}
+          {loginMethod === 'verify_signup_otp' && (
+            <form onSubmit={handleVerifySignupOtp}>
+              <p style={{ color: '#b3b3b3', fontSize: '14px', marginBottom: '20px', textAlign: 'left' }}>
+                Please enter the 6-digit verification code sent to <strong>{email}</strong> to activate your account.
+              </p>
+              
+              <div style={{ textAlign: 'left' }}>
+                <label>Enter 6-Digit Code</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456"
+                  required
+                />
+              </div>
+
+              {dummyOtp && (
+                <div style={{
+                  background: 'rgba(29, 185, 84, 0.1)',
+                  border: '1px solid #1db954',
+                  borderRadius: '4px',
+                  padding: '10px',
+                  marginBottom: '20px',
+                  fontSize: '12px',
+                  color: '#1db954',
+                  textAlign: 'left'
+                }}>
+                  <strong>Testing Box:</strong> Dummy verification OTP is <strong>{dummyOtp}</strong>.
+                </div>
+              )}
+
+              <button className="auth-btn" type="submit" disabled={loading}>
+                {loading ? 'Verifying...' : 'Verify Code'}
+              </button>
+
+              <p style={{ marginTop: '10px', fontSize: '13px' }}>
+                <a
+                  href="#"
+                  style={{ color: '#b3b3b3', textDecoration: 'none', fontWeight: 'bold' }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setLoginMethod('email');
+                    setError('');
+                    setMessage('');
+                  }}
+                >
+                  Back to Login
                 </a>
               </p>
             </form>

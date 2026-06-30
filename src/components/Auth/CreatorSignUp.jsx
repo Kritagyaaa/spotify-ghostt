@@ -5,7 +5,7 @@ import { SocialButtons } from './SocialButtons';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpClick }) {
+function CreatorSignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onShowUserSignUp }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,7 +29,8 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
           email: 'dummygoogle@example.com',
           name: 'Dummy Google User',
           google_id: 'g-123456',
-          profile_picture: 'https://i.pinimg.com/736x/6c/41/cb/6c41cb3ae4d97eeb68ee2279fe0e0c6f.jpg'
+          profile_picture: 'https://i.pinimg.com/736x/6c/41/cb/6c41cb3ae4d97eeb68ee2279fe0e0c6f.jpg',
+          role: 'creator'
         }),
       });
       const data = await res.json();
@@ -60,7 +61,8 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
           name,
           email,
           phone_number: phone,
-          password
+          password,
+          role: 'creator' // Explicitly registering as creator!
         }),
       });
       const data = await res.json();
@@ -94,7 +96,7 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
       if (!res.ok) {
         throw new Error(data.error || 'Invalid verification code.');
       }
-      alert('Email verified successfully! You can now log in.');
+      alert('Creator account verified successfully! You can now log in.');
       onSignUpSuccess?.();
     } catch (err) {
       setError(err.message);
@@ -137,9 +139,9 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
 
           {isVerifying ? (
             <>
-              <h1>Verify your email</h1>
+              <h1>Verify creator account</h1>
               <p style={{ color: '#b3b3b3', fontSize: '14px', marginBottom: '20px', textAlign: 'center' }}>
-                We sent a 6-digit verification code to <strong>{email}</strong>. Please enter it below to activate your account.
+                We sent a 6-digit verification code to <strong>{email}</strong>. Please enter it below to activate your creator account.
               </p>
 
               {error && <div style={{ color: '#ff4444', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold' }}>{error}</div>}
@@ -201,7 +203,7 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
             </>
           ) : (
             <>
-              <h1>Sign up to start listening</h1>
+              <h1>Sign up as creator</h1>
 
               {error && <div style={{ color: '#ff4444', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold' }}>{error}</div>}
 
@@ -212,7 +214,7 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="What should we call you?"
+                    placeholder="Enter your stage/brand name"
                     required
                   />
 
@@ -238,13 +240,13 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password"
+                    placeholder="Create a strong password"
                     required
                   />
                 </div>
 
                 <button className="auth-btn" type="submit" disabled={loading}>
-                  {loading ? 'Creating account...' : 'Sign Up'}
+                  {loading ? 'Creating creator account...' : 'Sign Up as Creator'}
                 </button>
               </form>
 
@@ -258,10 +260,22 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
                   alert('Please sign up by filling out the form. Phone OTP is currently supported for login verification.');
                 }}
                 onGoogleClick={handleGoogleSignUp}
-                onCreatorSignUpClick={onCreatorSignUpClick}
               />
 
               <p className="auth-footer-text">
+                Not a creator?
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onShowUserSignUp?.();
+                  }}
+                >
+                  Sign up as listener
+                </a>
+              </p>
+
+              <p className="auth-footer-text" style={{ marginTop: '12px' }}>
                 Already have an account?
                 <a
                   href="#"
@@ -273,15 +287,6 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
                   Log in
                 </a>
               </p>
-
-              {/* Footer */}
-              <div className="auth-extra-footer">
-                <p>
-                  This site is protected by reCAPTCHA and the Google
-                  <a href="#"> Privacy Policy</a> and
-                  <a href="#"> Terms of Service</a> apply.
-                </p>
-              </div>
             </>
           )}
         </div>
@@ -290,4 +295,4 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
   );
 }
 
-export default SignUp;
+export default CreatorSignUp;

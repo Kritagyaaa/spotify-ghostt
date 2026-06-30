@@ -164,6 +164,19 @@ export function Header({
                 <span>Account</span>
                 <ExternalLink size={16} />
               </div>
+              {user?.role === 'creator' && (
+                <div
+                  className={styles.menuItem}
+                  role="menuitem"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate("/creator/dashboard");
+                  }}
+                  style={{ cursor: 'pointer', color: '#1db954', fontWeight: 'bold' }}
+                >
+                  <span>Creator Dashboard</span>
+                </div>
+              )}
               <div className={styles.menuItem} role="menuitem">Recents</div>
               <div className={styles.menuItem} role="menuitem">
                 <span>Support</span>

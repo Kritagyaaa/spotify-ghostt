@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const database = require('./db');
 const { JWT_SECRET } = require('./authMiddleware');
+const crypto = require('crypto');
+const emailService = require('./services/emailService');
 
 // Helper to read JSON request body
 function readBody(request) {
@@ -50,7 +52,15 @@ function getClientMeta(request) {
 async function handleRegister(request, response) {
   try {
     const body = await readBody(request);
-    const { name, email, phone_number, password } = body;
+    const { name, email, phone_number, password, role } = body;
+    const userRole = role || 'user';
+
+    if (userRole === 'admin') {
+      return sendJson(response, 400, { error: 'Admin registration is not allowed.' });
+    }
+    if (userRole !== 'user' && userRole !== 'creator') {
+      return sendJson(response, 400, { error: 'Invalid registration role.' });
+    }
 
     if (!name || !email || !password) {
       return sendJson(response, 400, { error: 'Name, email, and password are required.' });
@@ -66,17 +76,31 @@ async function handleRegister(request, response) {
     // Hash the password
     const passwordHash = bcrypt.hashSync(password, 10);
 
-    // Save user - default is_verified to 1 for now since email verification is deferred
+    // Save user - default is_verified to 0 since we now send an OTP for verification
     const [result] = await database.query(
-      'INSERT INTO users (name, email, phone_number, password, is_verified) VALUES (?, ?, ?, ?, 1)',
-      [name, email, phone_number || null, passwordHash]
+      'INSERT INTO users (name, email, phone_number, password, role, is_verified) VALUES (?, ?, ?, ?, ?, 0)',
+      [name, email, phone_number || null, passwordHash, userRole]
     );
 
     const userId = result.insertId;
 
+    // Generate 6-digit OTP code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    // Save OTP to DB
+    await database.query(
+      'INSERT INTO otp_verifications (user_id, otp_code, purpose, expires_at) VALUES (?, ?, \'verify\', ?)',
+      [userId, otpCode, expiresAt]
+    );
+
+    // Send the OTP via emailService
+    await emailService.sendVerificationOtp(email, otpCode);
+
     sendJson(response, 201, {
-      message: 'User registered successfully.',
-      user: { id: userId, name, email, phone_number }
+      message: 'User registered successfully. Please verify your email with the OTP sent.',
+      user: { id: userId, name, email, phone_number },
+      otp: otpCode
     });
   } catch (error) {
     sendJson(response, 500, { error: error.message });
@@ -120,6 +144,32 @@ async function handleLogin(request, response) {
         [userIdForLog, ip, device, 'failed']
       );
       return sendJson(response, 401, { error: 'Invalid email or password.' });
+    }
+
+    // Check if account is verified
+    if (user.is_verified === 0) {
+      // Generate new OTP
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      // Invalidate old verifications of purpose 'verify'
+      await database.query('UPDATE otp_verifications SET is_used = 1 WHERE user_id = ? AND purpose = \'verify\'', [user.id]);
+
+      // Save OTP to DB
+      await database.query(
+        'INSERT INTO otp_verifications (user_id, otp_code, purpose, expires_at) VALUES (?, ?, \'verify\', ?)',
+        [user.id, otpCode, expiresAt]
+      );
+
+      // Resend OTP email
+      await emailService.sendVerificationOtp(user.email, otpCode);
+
+      return sendJson(response, 403, {
+        error: 'Account not verified. Please verify your email.',
+        code: 'UNVERIFIED_ACCOUNT',
+        email: user.email,
+        otp: otpCode
+      });
     }
 
     // Success - Create JWT & Session
@@ -210,8 +260,8 @@ async function handleSendOtp(request, response) {
       return sendJson(response, 404, { error: 'User not found.' });
     }
 
-    // Generate dummy OTP (constant or standard sequence for local validation)
-    const dummyOtp = '123456';
+    // Generate cryptographically secure random 6-digit OTP
+    const realOtp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
     // Mark previous OTPs of this purpose for this user as used
@@ -220,13 +270,22 @@ async function handleSendOtp(request, response) {
     // Save in DB
     await database.query(
       'INSERT INTO otp_verifications (user_id, otp_code, purpose, expires_at) VALUES (?, ?, ?, ?)',
-      [user.id, dummyOtp, otpPurpose, expiresAt]
+      [user.id, realOtp, otpPurpose, expiresAt]
     );
 
-    // Return the dummy OTP directly in the response so the UI can display it
+    // Send via emailService if email is provided
+    if (email) {
+      if (otpPurpose === 'verify') {
+        await emailService.sendVerificationOtp(email, realOtp);
+      } else if (otpPurpose === 'reset') {
+        await emailService.sendResetOtp(email, realOtp);
+      }
+    }
+
+    // Return the OTP in the response for debugging/UI test box
     sendJson(response, 200, {
       message: 'OTP generated successfully.',
-      otp: dummyOtp,
+      otp: realOtp,
       expires_at: expiresAt
     });
   } catch (error) {
@@ -275,6 +334,21 @@ async function handleVerifyOtp(request, response) {
 
     // Mark OTP as used
     await database.query('UPDATE otp_verifications SET is_used = 1 WHERE id = ?', [otpRecord.id]);
+
+    // If verification is for signup/general email verification, mark user as verified
+    if (otpPurpose === 'verify') {
+      await database.query('UPDATE users SET is_verified = 1 WHERE id = ?', [user.id]);
+      
+      // If the user has a creator role, automatically insert them into the creators table
+      const [fullUserRecords] = await database.query('SELECT name, email, role FROM users WHERE id = ?', [user.id]);
+      const fullUser = fullUserRecords[0];
+      if (fullUser && fullUser.role === 'creator') {
+        await database.query(
+          'INSERT INTO creators (name, email) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)',
+          [fullUser.name, fullUser.email]
+        );
+      }
+    }
 
     // If verification is for login, generate JWT and create session
     if (otpPurpose === 'login') {
@@ -717,4 +791,148 @@ module.exports = {
   handleAdminDeleteUser,
   handleAdminChangeRole,
   handleSocialLogin
+};
+
+/**
+ * POST /api/auth/forgot-password
+ * Requests a secure password reset link
+ */
+async function handleForgotPasswordLink(request, response) {
+  try {
+    const body = await readBody(request);
+    const { email } = body;
+
+    if (!email) {
+      return sendJson(response, 400, { error: 'Email is required.' });
+    }
+
+    // Verify user exists
+    const [users] = await database.query('SELECT id FROM users WHERE email = ?', [email]);
+    const user = users[0];
+    if (!user) {
+      return sendJson(response, 404, { error: 'User with this email not found.' });
+    }
+
+    // Generate secure 32-byte hexadecimal token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+
+    // Delete any existing reset tokens for this user
+    await database.query('DELETE FROM password_reset_tokens WHERE user_id = ?', [user.id]);
+
+    // Save in DB
+    await database.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+      [user.id, token, expiresAt]
+    );
+
+    // Construct frontend reset link
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetLink = `${baseUrl}/reset-password?token=${token}`;
+
+    // Send email
+    await emailService.sendResetLink(email, resetLink);
+
+    sendJson(response, 200, {
+      message: 'Password reset link sent to your email.',
+      token: token // also return token for local debugging/testing box
+    });
+  } catch (error) {
+    sendJson(response, 500, { error: error.message });
+  }
+}
+
+/**
+ * GET /api/auth/verify-reset-token
+ */
+async function handleVerifyResetToken(request, response) {
+  try {
+    // Parse query params from request URL
+    const url = new URL(request.url, `http://${request.headers.host}`);
+    const token = url.searchParams.get('token');
+
+    if (!token) {
+      return sendJson(response, 400, { error: 'Token is required.' });
+    }
+
+    const now = new Date();
+    // Retrieve token from DB
+    const [tokens] = await database.query(
+      'SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > ?',
+      [token, now]
+    );
+    const tokenRecord = tokens[0];
+
+    if (!tokenRecord) {
+      return sendJson(response, 400, { error: 'Invalid or expired token.' });
+    }
+
+    sendJson(response, 200, { success: true, message: 'Token is valid.' });
+  } catch (error) {
+    sendJson(response, 500, { error: error.message });
+  }
+}
+
+/**
+ * POST /api/auth/reset-password-with-token
+ */
+async function handleResetPasswordWithToken(request, response) {
+  try {
+    const body = await readBody(request);
+    const { token, new_password } = body;
+
+    if (!token || !new_password) {
+      return sendJson(response, 400, { error: 'token and new_password are required.' });
+    }
+
+    const now = new Date();
+    // Validate token record
+    const [tokens] = await database.query(
+      'SELECT * FROM password_reset_tokens WHERE token = ? AND expires_at > ?',
+      [token, now]
+    );
+    const tokenRecord = tokens[0];
+
+    if (!tokenRecord) {
+      return sendJson(response, 400, { error: 'Invalid or expired token.' });
+    }
+
+    // Hash new password and update user record
+    const newHash = bcrypt.hashSync(new_password, 10);
+    await database.query('UPDATE users SET password = ?, updated_at = ? WHERE id = ?', [newHash, new Date(), tokenRecord.user_id]);
+
+    // Delete used token
+    await database.query('DELETE FROM password_reset_tokens WHERE id = ?', [tokenRecord.id]);
+
+    // Delete any active sessions for security to force re-login
+    await database.query('UPDATE sessions SET is_active = 0 WHERE user_id = ?', [tokenRecord.user_id]);
+
+    sendJson(response, 200, { message: 'Password reset successfully. You can now log in.' });
+  } catch (error) {
+    sendJson(response, 500, { error: error.message });
+  }
+}
+
+module.exports = {
+  sendJson,
+  handleRegister,
+  handleLogin,
+  handleLogout,
+  handleSendOtp,
+  handleVerifyOtp,
+  handleResetPassword,
+  handleRefreshToken,
+  handleGetProfile,
+  handleUpdateProfile,
+  handleChangePassword,
+  handleGetDashboard,
+  handleGetSessions,
+  handleRevokeSession,
+  handleAdminListUsers,
+  handleAdminDeleteUser,
+  handleAdminChangeRole,
+  handleSocialLogin,
+  handleForgotPasswordLink,
+  handleVerifyResetToken,
+  handleResetPasswordWithToken
 };

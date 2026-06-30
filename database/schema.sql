@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone_number VARCHAR(50),
     password VARCHAR(255),
     profile_picture VARCHAR(500),
-    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin', 'creator')),
     is_verified BOOLEAN DEFAULT 0,
     is_google_user BOOLEAN DEFAULT 0,
     google_id VARCHAR(255),
