@@ -24,6 +24,9 @@ function getTransporter() {
       user,
       pass,
     },
+    connectionTimeout: 4000,
+    greetingTimeout: 4000,
+    socketTimeout: 4000,
   });
 }
 
@@ -168,15 +171,11 @@ async function sendResetLink(email, link) {
   const subject = 'Reset your Echord Password';
   const title = 'Password Reset Link';
   const greeting = email;
-  const messageBody = 'We received a request to reset your password. You can reset it directly by clicking the button below. This link is valid for 1 hour.';
+  const messageBody = 'We received a request to reset your password. Click the button below to reset your password. This link is valid for 1 hour.';
   const buttonHtml = `
     <div class="btn-container">
-      <a href="${link}" class="btn" target="_blank" style="color: #000000 !important;">Reset Password</a>
+      <a href="${link}" class="btn">Reset Password</a>
     </div>
-    <p style="font-size: 12px; word-break: break-all; text-align: center; color: #727272; margin-top: 20px;">
-      Or copy and paste this link in your browser:<br>
-      <a href="${link}" style="color: #1ED760;">${link}</a>
-    </p>
   `;
   const html = getEmailHtml(title, greeting, messageBody, buttonHtml);
   return sendMail(email, subject, html, `Reset Link: ${link}`);
@@ -208,15 +207,19 @@ async function sendMail(to, subject, html, logMessage) {
   };
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const sendPromise = transporter.sendMail(mailOptions);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('SMTP connection timed out after 5s')), 5000)
+    );
+    const info = await Promise.race([sendPromise, timeoutPromise]);
     console.log(`Email successfully sent to ${to}. Message ID: ${info.messageId}`);
     return {
       success: true,
       messageId: info.messageId,
     };
   } catch (error) {
-    console.error(`Error sending email to ${to}:`, error);
-    console.warn('⚠️ SMTP sending failed. Falling back to Mock Mode...');
+    console.error(`Error sending email to ${to}:`, error.message || error);
+    console.warn('⚠️ SMTP sending failed or timed out. Falling back to Mock Mode...');
     console.log('\n================== [MOCK EMAIL SERVICE] ==================');
     console.log(`To:      ${to}`);
     console.log(`Subject: ${subject}`);

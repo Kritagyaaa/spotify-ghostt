@@ -5,6 +5,7 @@ import { SocialButtons } from './SocialButtons';
 import { useGoogleLogin } from '@react-oauth/google';
 import { GoogleNameModal } from './GoogleNameModal';
 import { authenticateWithNativeGoogle, isNativeGoogleAuth } from '../../services/nativeGoogleAuth';
+import Loader from '../ui/Loader.jsx';
 
 const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
@@ -348,6 +349,7 @@ function Login({ onShowSignUp, onLoginSuccess }) {
           </div>
 
           <h1>Music Awaits</h1>
+          {loading && <Loader text="Logging in..." />}
 
           {error && <div style={{ color: '#ff4444', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold' }}>{error}</div>}
           {message && <div style={{ color: '#E19FC7', marginBottom: '15px', fontSize: '14px', fontWeight: 'bold' }}>{message}</div>}

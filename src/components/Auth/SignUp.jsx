@@ -5,6 +5,7 @@ import { SocialButtons } from './SocialButtons';
 import { useGoogleLogin } from '@react-oauth/google';
 import { GoogleNameModal } from './GoogleNameModal';
 import { authenticateWithNativeGoogle, isNativeGoogleAuth } from '../../services/nativeGoogleAuth';
+import Loader from '../ui/Loader.jsx';
 
 const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
@@ -194,6 +195,7 @@ function SignUp({ onShowLogin, onSignUpSuccess, onLoginSuccess, onCreatorSignUpC
           <div className="logo">
             <img src={logo} alt="Echord Logo" />
           </div>
+          {loading && <Loader text="Creating Account..." />}
 
           {isVerifying ? (
             <>

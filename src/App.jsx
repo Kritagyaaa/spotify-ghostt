@@ -1,6 +1,7 @@
 import styles from './App.module.css';
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Routes, Route, Navigate, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import Loader from './components/ui/Loader.jsx';
 import {
   searchSongs,
   getPlaylist,
@@ -154,6 +155,7 @@ function ProtectedLayout({
 }
 
 function App() {
+  const { stopPlayback } = usePlayer();
   const { selectedPlaylist, setSelectedPlaylist, selectPlaylist, loadPlaylists, setPlaylists } = usePlaylists();
   const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
@@ -173,6 +175,7 @@ function App() {
     } else {
       setPlaylists([]);
       setSelectedPlaylist(null);
+      stopPlayback();
     }
   }, [isAuthenticated]);
 
@@ -220,6 +223,7 @@ function App() {
       const response = await originalFetch(...args);
       if (response.status === 401 && isAuthenticated) {
         console.warn('Session expired or unauthorized. Clearing session and redirecting to login...');
+        stopPlayback();
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('last_song');
@@ -245,6 +249,7 @@ function App() {
     const interval = setInterval(async () => {
       const token = localStorage.getItem('token');
       if (!token) {
+        stopPlayback();
         setIsAuthenticated(false);
         setUser(null);
         navigate('/login', { replace: true });
@@ -261,6 +266,7 @@ function App() {
 
     return () => clearInterval(interval);
   }, [isAuthenticated, navigate]);
+
   const handleLoginSuccess = (token, loggedInUser) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(loggedInUser));
@@ -274,6 +280,7 @@ function App() {
   };
 
   const handleLogout = async () => {
+    stopPlayback();
     try {
       const token = localStorage.getItem('token');
       if (token) {
@@ -298,186 +305,188 @@ function App() {
 
 
   return (
-    <Routes>
-      {/* Public/Guest Routes */}
-      <Route
-        path="/login"
-        element={
-          isAuthenticated ? (
-            user?.role === 'creator' ? (
-              <Navigate to="/creator/dashboard" replace />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          ) : (
-            <Login
-              onShowSignUp={() => navigate('/signup')}
-              onLoginSuccess={handleLoginSuccess}
-            />
-          )
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          isAuthenticated ? (
-            user?.role === 'creator' ? (
-              <Navigate to="/creator/dashboard" replace />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          ) : (
-            <SignUp
-              onShowLogin={() => navigate('/login')}
-              onSignUpSuccess={() => navigate('/login')}
-              onLoginSuccess={handleLoginSuccess}
-              onCreatorSignUpClick={() => navigate('/creator/signup')}
-            />
-          )
-        }
-      />
-      <Route
-        path="/creator/signup"
-        element={
-          isAuthenticated ? (
-            user?.role === 'creator' ? (
-              <Navigate to="/creator/dashboard" replace />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          ) : (
-            <CreatorSignUp
-              onShowLogin={() => navigate('/login')}
-              onSignUpSuccess={() => navigate('/login')}
-              onLoginSuccess={handleLoginSuccess}
-              onShowUserSignUp={() => navigate('/signup')}
-            />
-          )
-        }
-      />
-      <Route
-        path="/reset-password"
-        element={<ResetPasswordPage />}
-      />
-      <Route
-        path="/creator/dashboard"
-        element={
-          isAuthenticated && user?.role === 'creator' ? (
-            <CreatorDashboard user={user} onLogout={handleLogout} />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
-
-      {/* Legacy auth route compatibility */}
-      <Route path="/auth" element={<Navigate to="/signup" replace />} />
-      <Route path="/auth/signup" element={<Navigate to="/signup" replace />} />
-
-      {/* Protected Routes inside the App Layout */}
-      <Route
-        element={
-          <ProtectedLayout
-            isAuthenticated={isAuthenticated}
-            selectedPlaylist={selectedPlaylist}
-            setSelectedPlaylist={setSelectedPlaylist}
-            handlePlaylistSelect={handlePlaylistSelect}
-            user={user}
-            handleLogout={handleLogout}
-            navigate={navigate}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            searchResults={searchResults}
-            setSearchResults={setSearchResults}
-          />
-        }
-      >
+    <Suspense fallback={<Loader fullScreen />}>
+      <Routes>
+        {/* Public/Guest Routes */}
         <Route
-          path="/"
+          path="/login"
           element={
-            selectedPlaylist ? (
-              <PlaylistView playlist={selectedPlaylist} />
+            isAuthenticated ? (
+              user?.role === 'creator' ? (
+                <Navigate to="/creator/dashboard" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
             ) : (
-              <MainPage
-                searchQuery={searchQuery}
-                searchResults={searchResults}
+              <Login
+                onShowSignUp={() => navigate('/signup')}
+                onLoginSuccess={handleLoginSuccess}
               />
             )
           }
         />
         <Route
-          path="/browse"
+          path="/signup"
           element={
-            <BrowseView />
+            isAuthenticated ? (
+              user?.role === 'creator' ? (
+                <Navigate to="/creator/dashboard" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            ) : (
+              <SignUp
+                onShowLogin={() => navigate('/login')}
+                onSignUpSuccess={() => navigate('/login')}
+                onLoginSuccess={handleLoginSuccess}
+                onCreatorSignUpClick={() => navigate('/creator/signup')}
+              />
+            )
           }
         />
         <Route
-          path="/albums"
+          path="/creator/signup"
           element={
-            <AlbumsView />
+            isAuthenticated ? (
+              user?.role === 'creator' ? (
+                <Navigate to="/creator/dashboard" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            ) : (
+              <CreatorSignUp
+                onShowLogin={() => navigate('/login')}
+                onSignUpSuccess={() => navigate('/login')}
+                onLoginSuccess={handleLoginSuccess}
+                onShowUserSignUp={() => navigate('/signup')}
+              />
+            )
           }
         />
         <Route
-          path="/playlists"
-          element={
-            <PlaylistsView />
-          }
+          path="/reset-password"
+          element={<ResetPasswordPage />}
         />
         <Route
-          path="/profile"
+          path="/creator/dashboard"
           element={
-            <ProfilePage
-              user={user}
-              onProfileUpdate={(updated) => setUser(updated)}
-              onBackToMain={() => {
-                setSelectedPlaylist(null);
-                navigate('/');
-              }}
-            />
+            isAuthenticated && user?.role === 'creator' ? (
+              <CreatorDashboard user={user} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
-        <Route
-          path="/history"
-          element={
-            <HistoryView
-              onBackToMain={() => {
-                setSelectedPlaylist(null);
-                navigate('/');
-              }}
-            />
-          }
-        />
-        <Route
-          path="/queue"
-          element={
-            <QueueView />
-          }
-        />
-      </Route>
 
-      {/* Standalone Protected Route for Account Page */}
-      <Route
-        path="/account"
-        element={
-          isAuthenticated ? (
-            <AccountPage
-              user={user}
-              onProfileUpdate={(updated) => setUser(updated)}
-              onLogout={handleLogout}
-              onBackToMain={() => {
-                setSelectedPlaylist(null);
-                navigate('/');
-              }}
-            />
-          ) : (
-            <Navigate to="/login" replace />
-          )
-        }
-      />
+        {/* Legacy auth route compatibility */}
+        <Route path="/auth" element={<Navigate to="/signup" replace />} />
+        <Route path="/auth/signup" element={<Navigate to="/signup" replace />} />
 
-      {/* Fallback route */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Protected Routes inside the App Layout */}
+        <Route
+          element={
+            <ProtectedLayout
+              isAuthenticated={isAuthenticated}
+              selectedPlaylist={selectedPlaylist}
+              setSelectedPlaylist={setSelectedPlaylist}
+              handlePlaylistSelect={handlePlaylistSelect}
+              user={user}
+              handleLogout={handleLogout}
+              navigate={navigate}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              searchResults={searchResults}
+              setSearchResults={setSearchResults}
+            />
+          }
+        >
+          <Route
+            path="/"
+            element={
+              selectedPlaylist ? (
+                <PlaylistView playlist={selectedPlaylist} />
+              ) : (
+                <MainPage
+                  searchQuery={searchQuery}
+                  searchResults={searchResults}
+                />
+              )
+            }
+          />
+          <Route
+            path="/browse"
+            element={
+              <BrowseView />
+            }
+          />
+          <Route
+            path="/albums"
+            element={
+              <AlbumsView />
+            }
+          />
+          <Route
+            path="/playlists"
+            element={
+              <PlaylistsView />
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProfilePage
+                user={user}
+                onProfileUpdate={(updated) => setUser(updated)}
+                onBackToMain={() => {
+                  setSelectedPlaylist(null);
+                  navigate('/');
+                }}
+              />
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <HistoryView
+                onBackToMain={() => {
+                  setSelectedPlaylist(null);
+                  navigate('/');
+                }}
+              />
+            }
+          />
+          <Route
+            path="/queue"
+            element={
+              <QueueView />
+            }
+          />
+        </Route>
+
+        {/* Standalone Protected Route for Account Page */}
+        <Route
+          path="/account"
+          element={
+            isAuthenticated ? (
+              <AccountPage
+                user={user}
+                onProfileUpdate={(updated) => setUser(updated)}
+                onLogout={handleLogout}
+                onBackToMain={() => {
+                  setSelectedPlaylist(null);
+                  navigate('/');
+                }}
+              />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
 export default App;

@@ -116,8 +116,30 @@ export function PlayerProvider({ children }) {
 
         };
 
+        const stopPlayback = () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current.currentTime = 0;
+                audioRef.current.src = "";
+            }
+            setIsPlaying(false);
+            setCurrentSong(null);
+            currentSongRef.current = null;
+            setQueue([]);
+            queueRef.current = [];
+        };
+
         // Restore song, queue, and playback time from localStorage
         const restorePlayback = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+                setIsPlaying(false);
+                return;
+            }
+
             try {
                 const savedSongStr = localStorage.getItem('last_song');
                 const savedQueueStr = localStorage.getItem('last_queue');
@@ -179,6 +201,12 @@ export function PlayerProvider({ children }) {
 
     }, []);
     const playSong = async (song, playlist = []) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.warn("Playback blocked: User is not logged in.");
+            stopPlayback();
+            return;
+        }
 
         try {
             pendingRestorationTimeRef.current = null;
@@ -467,6 +495,18 @@ setIsPlaying(true);
         setUserQueue([]);
     };
 
+    const stopPlayback = () => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+        }
+        setIsPlaying(false);
+        setCurrentSong(null);
+        currentSongRef.current = null;
+        localStorage.removeItem('last_song');
+        localStorage.removeItem('playback_time');
+    };
+
     return (
 
         <playercontext.Provider
@@ -499,6 +539,7 @@ setIsPlaying(true);
                 reorderUserQueue,
                 clearUserQueue,
                 setUserQueue,
+                stopPlayback,
             }}
         >
 
